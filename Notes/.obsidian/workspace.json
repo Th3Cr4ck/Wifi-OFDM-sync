@@ -1,0 +1,274 @@
+{
+  "main": {
+    "id": "a5002d0ae23739ba",
+    "type": "split",
+    "children": [
+      {
+        "id": "893b5766c5bd9e4e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "24e1801b75a5ed3f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Teoría/IEEE 802.11 -- CFO.md",
+                "mode": "preview",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "IEEE 802.11 -- CFO"
+            }
+          },
+          {
+            "id": "de1e6d57fbe0cb00",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Bitácora/2026-11-11.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "2026-11-11"
+            }
+          }
+        ],
+        "currentTab": 1
+      },
+      {
+        "id": "205015d07760eb32",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "183e2958f516a6cc",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Teoría/IEEE 802.11 PHY.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "IEEE 802.11 PHY"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "27766df24ff627b0",
+    "type": "split",
+    "children": [
+      {
+        "id": "3ead4b9e9645fc3d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "784f872c39db71f9",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "3f27b0ed66618474",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "cf66bc71eea84656",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 351.5
+  },
+  "right": {
+    "id": "6450772fc9837631",
+    "type": "split",
+    "children": [
+      {
+        "id": "205d78a7173e2c31",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f27d0b3f2b039ac0",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Tesis Gonzalo.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "b5993fd8d507c211",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Tesis Gonzalo.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "bbfd394efe88ba04",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "d1e5dc010f8ae411",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "0858df1bb3f1726f",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Tesis Gonzalo.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "de1e6d57fbe0cb00",
+  "lastOpenFiles": [
+    "Bitácora/2026-10-30.md",
+    "Bitácora/2026-11-11.md",
+    "Bitácora/2026-10-27 Fig Diff Sync Metric.png",
+    "Bitácora/2026-10-27.md",
+    "Bitácora/2026-10-23.md",
+    "Bitácora/2026-10-21.md",
+    "Bitácora/2026-02-30.md",
+    "Bitácora/Bitácora 11 nov 2026.md",
+    "Teoría/IEEE 802.11 -- CFO.md",
+    "Teoría/Schmidl & Cox — CFO.md",
+    "Teoría/IEEE 802.11 PHY.md",
+    "Objetivos/8 octubre 2026.md",
+    "Objetivos/21 semptiembre 2026.md",
+    "Borrar programas.md",
+    "Frecuencias.md",
+    "Recepcion HDL/Modulos/Paquetizer-1.md",
+    "Bitácora",
+    "Objetivos/30 septiembre 2026.md",
+    "Pasted image 20261012144042.png",
+    "Matlab/Programas.md",
+    "Matlab",
+    "Teoría/IEEE 802.11 -- STO.md",
+    "Teoría/Moving Average Filter.md",
+    "Teoría/MovingAverageFilter.png",
+    "Recepcion HDL/Arquitectura general/Controlador de Interfaz de Red (NIC).md",
+    "Recepcion HDL/Arquitectura general/Arquitectura general del sistema HDL.md",
+    "Recepcion HDL/Arquitectura general/Arquitectura de cores en receptor.png",
+    "Pasted image 20260928195506.png",
+    "Pasted image 20260924155030.png",
+    "Pasted image 20260924155035.png",
+    "Teoría/IEEE 802.11 frame structure.png",
+    "Teoría/IEEE 802.11 frame structure 2.png",
+    "Teoría/Pasted image 20260922124743.png",
+    "Recepcion HDL/Modulos/Normalizer-2.md",
+    "home/isaac/Documents/Cinvestav/Tesis/Thesis References/S&C.pdf.md",
+    "home/isaac/Documents/Cinvestav/Tesis/Thesis References",
+    "home/isaac/Documents/Cinvestav/Tesis",
+    "home/isaac/Documents/Cinvestav",
+    "home/isaac/Documents",
+    "home/isaac",
+    "home",
+    "Teoría",
+    "Recepcion HDL/Modulos/FFT.md",
+    "Objetivos",
+    "home/isaac/Documents/Cinvestav/Tesis/Thesis References/1483En_desarrollo.pdf.md"
+  ]
+}

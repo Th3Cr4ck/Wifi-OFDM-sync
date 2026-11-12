@@ -1,0 +1,53 @@
+% Algoritmo de descomposicion QR, basada en rotaciones de Givens
+% Las variables son las siguientes:
+
+% ENTRADAS
+% H = Matriz de respuesta al impulso del canal
+% rxSig = Datos recibidos en el transmisor
+% block_len = tama~no del simbolo. En OFDM V2V 811p, son 48 datos 
+
+% SALIDAS 
+% R_matrix = Matriz R, resultado de la descomposicion
+% Qh_y = respuesta la multiplicacion del dato recibido, por el hermitiano
+% de Q
+
+% function [H_extendida, R_matrix, Qh_y] = qr_givens(H, rxSig,block_len)
+function [H_extendida, R_matrix, Qh_y] = qr_givens(Matriz)
+% 
+% block_len = length(rxSig);
+% H = rand(block_len) + j*rand(block_len);
+% rxSig = rand(block_len,1);
+% 
+% H_extendida = [H rxSig];
+% 
+% for k = 1:block_len
+%     for i_qr = block_len-1:-1:k
+%         j = k;
+%         r = sqrt(abs(H_extendida(i_qr,j))^2 + abs(H_extendida(i_qr+1,j))^2);
+%         if(r == 0)
+%             c = 1;
+%             s = 0;
+%         else
+%             c = conj(H_extendida(i_qr,j))/r;
+%             s = conj(H_extendida(i_qr+1,j))/r;
+%         end
+% 
+%         H_extendida(i_qr,j) = r;
+%         H_extendida(i_qr+1,j) = 0;
+% 
+%         for j = k+1:block_len + 1
+% 
+%             aux = H_extendida(i_qr,j);
+%             b = H_extendida(i_qr+1,j);
+% 
+%             H_extendida(i_qr,j) = c*aux + s*b;
+%             H_extendida(i_qr+1,j) = -conj(s)*aux + conj(c)*b;
+%         end
+%     end
+% end
+% 
+% R_matrix = H_extendida(1:block_len,1:end-1);
+% Qh_y = H_extendida(:,end);
+ 
+[H_extendida, R_matrix, Qh_y] = QR(Matriz);
+    

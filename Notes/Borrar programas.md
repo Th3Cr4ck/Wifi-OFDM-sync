@@ -1,0 +1,5 @@
+- QT Creator
+- libopencv-dev
+- qtbase5-dev
+- qt5-qmake
+- qtbase5-dev-tools

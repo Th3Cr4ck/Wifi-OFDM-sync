@@ -1,0 +1,280 @@
+/* Fast External Embed 样式 */
+
+.fast-external-embed-container,
+.file-embed.fast-external-embed-container {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  position: relative;
+  margin: 1em 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  overflow: hidden;
+  color: var(--text-normal) !important;
+  background-color: var(--background-secondary);
+  transition: border-color 0.2s ease;
+}
+
+/* Obsidian 自带的外层容器不画框，避免和插件容器叠出多层边框 */
+.image-embed.fast-external-embed-host,
+.image-wrapper.fast-external-embed-host {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* 嵌入网页 iframe 默认撑满容器宽度 */
+.fast-external-embed-iframe {
+  display: block;
+  border: none;
+  border-radius: 0;
+  width: 100% !important;
+}
+
+/* [[C:/...]] 等仓库外本地文件链接 */
+.fast-external-file-link {
+  color: var(--link-color) !important;
+  cursor: pointer;
+  text-decoration: var(--link-decoration);
+  text-decoration-color: var(--link-decoration-color);
+}
+
+.fast-external-file-link:hover {
+  color: var(--link-color-hover) !important;
+  text-decoration: var(--link-decoration-hover);
+}
+
+.fast-external-embed-container:hover {
+  border-color: var(--interactive-accent);
+}
+
+.fast-external-embed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background-color: var(--background-secondary-alt);
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: 0.85em;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.fast-external-embed-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.fast-external-embed-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.fast-external-embed-btn {
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 0.85em;
+  line-height: 1.2;
+  transition: background 0.15s ease;
+}
+
+.fast-external-embed-btn:hover {
+  background: var(--interactive-hover);
+  color: var(--text-accent);
+}
+
+.fast-external-embed-body {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.fast-external-pdf-host {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  background: var(--background-secondary);
+}
+
+.fast-external-pdf-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 34px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary-alt);
+  color: var(--text-muted);
+}
+
+.fast-external-pdf-tool-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  padding: 3px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.fast-external-pdf-tool-button:hover:not(:disabled) {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.fast-external-pdf-tool-button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.fast-external-pdf-page-input {
+  width: 48px;
+  height: 24px;
+  padding: 2px 4px;
+  text-align: center;
+  font-size: 0.82em;
+}
+
+.fast-external-pdf-page-total,
+.fast-external-pdf-zoom-label {
+  font-size: 0.8em;
+  white-space: nowrap;
+}
+
+.fast-external-pdf-zoom-label {
+  min-width: 42px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.fast-external-pdf-toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.fast-external-pdf-scroll {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--background-secondary);
+}
+
+.fast-external-pdf-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  min-width: min-content;
+  padding: 16px;
+}
+
+.fast-external-pdf-loading {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.fast-external-pdf-loading.is-error {
+  color: var(--text-error);
+}
+
+.fast-external-pdf-page {
+  position: relative;
+  flex: 0 0 auto;
+  max-width: none;
+  transition: width 0.12s ease, min-height 0.12s ease;
+}
+
+.fast-external-pdf-page-surface {
+  position: relative;
+  width: 100%;
+  min-height: inherit;
+  overflow: hidden;
+  line-height: 0;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 25%);
+  background: white;
+}
+
+.fast-external-pdf-page canvas {
+  display: block;
+  width: 100%;
+}
+
+.fast-external-pdf-page-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  background: #f4f4f4;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.fast-external-pdf-page-status.is-hidden {
+  display: none;
+}
+
+.fast-external-embed-img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.fast-external-embed-media {
+  width: 100%;
+  max-height: 70vh;
+  display: block;
+}
+
+.fast-external-embed-error {
+  padding: 12px 16px;
+  color: var(--text-error);
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fast-external-embed-error code {
+  color: var(--text-muted);
+  background-color: var(--background-primary);
+  padding: 2px 4px;
+  border-radius: 4px;
+}

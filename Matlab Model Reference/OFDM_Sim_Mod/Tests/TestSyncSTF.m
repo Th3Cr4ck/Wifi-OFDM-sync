@@ -1,0 +1,291 @@
+addpath('..');
+clc;
+clear;
+close all;
+
+%% Parameters
+Fs = 10e6;
+Fc = 2.4e9;
+Nfft = 64;
+GI = 16;
+Mary = 16;
+initialDelay = 200;  % Initial zeros
+SNR_dB = 5:5:50;
+it = 4000;
+delayFactor = 4;
+
+estIndexError = zeros(length(SNR_dB), it);
+
+ACTIVE_TDL_CHANNEL = false;
+
+%% Channel Model
+if ACTIVE_TDL_CHANNEL              
+    v_kmh = 100.0;                % UE velocity in km/h
+    c = physconst('lightspeed');  % speed of light in m/s
+    v_ms = v_kmh * 1000/3600;     % convert to m/s
+    Fd_max = (v_ms/c) * Fc;       % maximum Doppler frequency in Hz
+    
+    tdl = nrTDLChannel;
+    tdl.DelayProfile = 'TDL-A';
+    tdl.DelaySpread = 200e-9;
+    tdl.MaximumDopplerShift = Fd_max;
+    tdl.SampleRate = Fs;
+    tdl.NumReceiveAntennas = 1;
+end
+
+
+%% Generate preamble
+preamShort = generatePreambleSTF();
+preamLong = generatePreambleLTF();
+
+% Normalize power
+preamPower = 1;
+scaleFactorShort = sqrt(preamPower) / sqrt(mean(abs(preamShort).^2));
+scaleFactorLong = sqrt(preamPower) / sqrt(mean(abs(preamLong).^2));
+
+preamShort = preamShort * scaleFactorShort;
+preamLong = preamLong * scaleFactorLong;
+
+for SNR = SNR_dB
+    for i = 1:it
+      %% Generate payload
+        % 52 active subcarriers, excluding DC
+        activeSubcarriers = [-26:-1 1:26];
+        
+        transmittedBits = round(rand(52*log2(Mary), 1));
+        payloadSymbols = qammod(transmittedBits, Mary, ...
+            'InputType', 'bit', 'UnitAveragePower', true).';
+           
+        X = zeros(1,Nfft);
+        activeBins = mod(activeSubcarriers, Nfft) + 1;
+        X(activeBins) = payloadSymbols;
+        
+        payloadUseful = ifft(X);               
+                   
+        % Normalize power
+        payloadScale = 1 / sqrt(mean(abs(payloadUseful).^2));
+        payloadUseful = payloadUseful * payloadScale;        
+
+        % Add CP
+        payload = [payloadUseful(end-GI+1:end), payloadUseful];  
+                        
+        %% Assemble transmitted frame
+        txFrame = [zeros(1,initialDelay), ...
+           preamShort, ...
+           preamLong, ...
+           payload, ...
+           zeros(1, initialDelay/2)];
+        
+       %% TDL Channel
+        if ACTIVE_TDL_CHANNEL                          
+            [rxFrame, pathGains] = tdl(transpose(txFrame));
+            offsetChannel = nrPerfectTimingEstimate(pathGains, getPathFilters(tdl));
+            trueSTFStart = initialDelay + 1 + offsetChannel;
+            trueLTFStart = initialDelay + length(preamShort) + 1 + offsetChannel;
+            rxFrame = transpose(rxFrame);
+        else
+            offsetChannel = 0;
+            trueSTFStart = initialDelay + 1;
+            trueLTFStart = initialDelay + length(preamShort) + 1;
+            rxFrame = txFrame;
+        end
+     
+
+        %% Add noise
+        activeSignal = rxFrame(initialDelay+1:end-initialDelay/2);
+        signalPower = mean(abs(activeSignal).^2);
+        noisePower = signalPower / 10^(SNR/10);
+        
+        noise = sqrt(noisePower/2) * ...
+            (randn(1,length(rxFrame)) + 1j*randn(1, length(rxFrame)));
+        
+        rxFrame = rxFrame + noise;
+        
+        %% Synchronization       
+        % plotMetric = mod(i, 900) == 0;
+        % if plotMetric
+        %     figure(1); clf; hold on; grid on;
+        %     xline(trueLTFStart, '--', 'LTF Start');
+        % end
+        EstSTF = WifiSyncSTFDiffThld(rxFrame, delayFactor, false);
+    
+        if EstSTF.syncSucceeded            
+            estIndexError(SNR == SNR_dB, i) = EstSTF.index - trueLTFStart;
+        else
+            estIndexError(SNR == SNR_dB, i) = NaN;
+            continue;
+        end
+
+        
+    end
+end
+
+%% Results 
+figure;
+plot(abs(rxFrame));
+hold on;
+
+xline(trueSTFStart, '--g', 'STF start');
+xline(trueLTFStart, '--r', 'LTF start');
+
+if EstSTF.syncSucceeded
+    xline(EstSTF.index, '--', 'LTF estimated index');
+end
+
+xlabel('Sample index');
+ylabel('Magnitude');
+title('802.11a frame: Synchronization');
+grid on;
+legend('Received signal', 'STF start', 'LTF Start', 'LTF Start Detected index');
+
+rmseIndexError = sqrt(mean(estIndexError.^2, 2, 'omitnan'));
+figure;
+semilogy(SNR_dB, rmseIndexError, '-o');
+xlabel('SNR (dB)');
+ylabel('Timing RMSE (samples)');
+grid on;
+title('STF Timing Estimation Performance');
+
+% Normalized Histogram
+figure;
+hold on;
+grid on;
+
+colors = lines(length(SNR_dB));
+
+for k = 1:length(SNR_dB)
+    validErrors = estIndexError(k, ~isnan(estIndexError(k,:)));
+
+    if ~isempty(validErrors)        
+        
+        minVal = floor(min(validErrors));
+        maxVal = ceil(max(validErrors));
+        binEdges = (minVal-0.5):1:(maxVal+0.5);
+
+        histogram(validErrors, ...
+            'BinEdges', binEdges, ...            
+            'DisplayStyle', 'stairs', ...
+            'Normalization', 'probability', ...
+            'EdgeColor', colors(k,:), ...
+            'LineWidth', 1.5);
+        xlim([-10.5 10.5]);
+    end
+end
+
+xlabel('Timing error (samples)');
+ylabel('Probability');
+title('Timing error distribution vs SNR');
+legend(compose('%g dB', SNR_dB), 'Location', 'best');
+
+% 3D Histogram
+errorEdges = -10.5:1:10.5;
+errorCenters = errorEdges(1:end-1) + 0.5;
+
+H = zeros(length(SNR_dB), length(errorCenters));
+
+for k = 1:length(SNR_dB)
+    validErrors = estIndexError(k, ~isnan(estIndexError(k,:)));
+
+    H(k,:) = histcounts(validErrors, errorEdges, ...
+        'Normalization', 'probability');
+end
+
+ 
+% Categorias: fallo, error negativo, error cero, error positivo
+outcomeProb = zeros(length(SNR_dB), 4);
+
+for k = 1:length(SNR_dB)
+    e = estIndexError(k,:);
+
+    failed = isnan(e);
+    valid = ~failed;
+
+    outcomeProb(k,1) = sum(failed) / it;
+    outcomeProb(k,2) = sum(e(valid) > 0) / it;
+    outcomeProb(k,3) = sum(e(valid) == 0) / it;
+    outcomeProb(k,4) = sum(e(valid) < 0) / it;   
+    
+end
+
+figure;
+bar3(outcomeProb);
+
+xlabel('Results');
+ylabel('SNR (dB)');
+zlabel('Probability');
+title('Synchronization results distribution');
+grid on;
+
+ax = gca;
+ax.XTick = 1:4;
+ax.XTickLabel = {'Detection failed','Positive error','Exact','Negative error'};
+ax.YTick = 1:length(SNR_dB);
+ax.YTickLabel = SNR_dB;
+
+% Categorias: fallo + indice erroneo, exito
+outcomeProb = zeros(length(SNR_dB), 2);
+
+for k = 1:length(SNR_dB)
+    e = estIndexError(k,:);
+    freeISIErrorRange = -GI+1:0;
+
+    failed = isnan(e) | ~ismember(e, freeISIErrorRange);
+    valid = ~failed;
+    
+    outcomeProb(k,1) = sum(failed) / it;
+    outcomeProb(k,2) = sum(valid) / it;
+end
+
+figure;
+bar3(outcomeProb);
+
+xlabel('Results');
+ylabel('SNR (dB)');
+zlabel('Probability');
+title('Synchronization results distribution');
+grid on;
+
+ax = gca;
+ax.XTick = 1:2;
+ax.XTickLabel = {'Fail', 'Succeed'};
+ax.YTick = 1:length(SNR_dB);
+ax.YTickLabel = SNR_dB;
+
+figure; 
+detectionFail = isnan(estIndexError);
+syncFail = detectionFail | ~ismember(estIndexError, freeISIErrorRange);
+plot(SNR_dB, sum(detectionFail, 2) ./ it, 'DisplayName', 'Sync Detection Failure');
+hold on; plot(SNR_dB, sum(syncFail, 2) ./ it, 'DisplayName', 'Total Sync Failure');
+xlabel('SNR (dB)');
+ylabel('Synchronization Failure Ratio');
+grid on;
+title('Synchronization Failure');
+legend;
+
+
+
+%% Functions
+function preamLong = generatePreambleLTF()
+    k = -26:26;
+    L = [1 1 -1 -1 1 1 -1 1 -1 1 1 1 1 1 1 -1 -1 1 1 -1 1 -1 1 1 1 1 ...
+         0 ...
+         1 -1 -1 1 1 -1 1 -1 1 -1 -1 -1 -1 -1 1 1 -1 -1 1 -1 1 -1 1 1 1 1];
+    
+    Lfft = zeros(1,64);
+    Lfft(mod(k,64)+1) = L;          % k negativo -> bins 64+k
+    
+    l64  = ifft(Lfft);
+    GI2 = 32;
+    preamLong = [l64(GI2+1:64) l64 l64];    % GI2 + T1 + T2 = 160 muestras
+end
+
+function preamShort = generatePreambleSTF()
+    k    = [-24 -20 -16 -12 -8 -4 4 8 12 16 20 24];
+    vals = (1+1j) * [1 -1 1 -1 -1 1 -1 -1 1 1 1 1];
+    
+    S = zeros(1,64);
+    S(mod(k,64)+1) = sqrt(13/6) * vals;   % mapeo a bins FFT (k negativo -> 64+k)
+    
+    s64   = ifft(S);                       % 64 muestras, periodo de 16
+    preamShort = repmat(s64(1:16), 1, 10);      % 160 muestras = 8 µs
+end
