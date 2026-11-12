@@ -102,12 +102,7 @@ for SNR = SNR_dB
         rxFrame = rxFrame + noise;
         
         %% Synchronization       
-        % plotMetric = mod(i, 900) == 0;
-        % if plotMetric
-        %     figure(1); clf; hold on; grid on;
-        %     xline(trueLTFStart, '--', 'LTF Start');
-        % end
-        EstSTF = WifiSyncSTF(rxFrame, delayFactor, false);
+        EstSTF = WifiSyncSTF(rxFrame, delayFactor);
     
         if EstSTF.syncSucceeded            
             estIndexError(SNR == SNR_dB, i) = EstSTF.index - trueLTFStart;

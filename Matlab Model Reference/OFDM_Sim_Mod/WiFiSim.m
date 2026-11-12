@@ -12,14 +12,14 @@ GI = 16;
 GI2 = 32;
 SNR_dB = 5:5:50;
 initialDelay = 200;  % Initial zeros
-iter = 2000;
+iter = 4000;
 delayFactor = 4;
 
 CFO_norm = 1.2; % CFO normzalized by subcarrier spacing
 trueCFO_Hz = CFO_norm*Fs/Nfft;
 trueCFO = 2*pi*trueCFO_Hz/Fs;  % rad/sample
 
-ACTIVE_TDL_CHANNEL = false;
+ACTIVE_TDL_CHANNEL = true;
 
 coarseCFO = zeros(length(SNR_dB), iter);
 totalCFO = zeros(length(SNR_dB), iter);
@@ -203,14 +203,14 @@ xline(trueSTFStart, '--g', 'STF start');
 xline(trueLTFStart, '--', 'LTF start')
 
 if EstSTF.syncSucceeded
-    xline(EstSTF.index, '--r', 'LTF detected index');
+    xline(EstSTF.index, '--r', 'LTF start detected');
 end
 
 xlabel('Sample index');
 ylabel('Magnitude');
 title('802.11a frame: Synchronization');
 grid on;
-legend('Received signal', 'STF start', 'LTF start', 'STF Detected index');
+legend('Received signal', 'STF start', 'LTF start', 'LTF Detected index');
 
 figure;
 ok = ~(syncFailedSTF | syncFailedLTF);
