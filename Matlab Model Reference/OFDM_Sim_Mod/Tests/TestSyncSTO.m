@@ -107,7 +107,7 @@ for SNR = SNR_dB
         %     figure(1); clf; hold on; grid on;
         %     xline(trueLTFStart, '--', 'LTF Start');
         % end
-        EstSTF = WifiSyncSTFDiffThld(rxFrame, delayFactor, false);
+        EstSTF = WifiSyncSTF(rxFrame, delayFactor, false);
     
         if EstSTF.syncSucceeded            
             estIndexError(SNR == SNR_dB, i) = EstSTF.index - trueLTFStart;
@@ -199,7 +199,7 @@ for k = 1:length(SNR_dB)
 
     failed = isnan(e);
     valid = ~failed;
-    
+
     outcomeProb(k,1) = sum(failed) / it;
     outcomeProb(k,2) = sum(e(valid) > 0) / it;
     outcomeProb(k,3) = sum(e(valid) == 0) / it;
@@ -218,11 +218,11 @@ grid on;
 
 ax = gca;
 ax.XTick = 1:4;
-ax.XTickLabel = {'Detection failed','Negative error','Exact','Positive error'};
+ax.XTickLabel = {'Detection failed','Positive error','Exact','Negative error'};
 ax.YTick = 1:length(SNR_dB);
 ax.YTickLabel = SNR_dB;
 
-% Categorias: fallo + indice incorrecto, exito
+% Categorias: fallo + indice erroneo, exito
 outcomeProb = zeros(length(SNR_dB), 2);
 
 for k = 1:length(SNR_dB)

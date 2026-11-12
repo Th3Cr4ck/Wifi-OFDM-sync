@@ -108,7 +108,7 @@ for m = 1:length(CFO_norm_values)
             rxFrame = rxFrame + noise;
             
             %% Run STF synchronization            
-            EstSTF = WifiSyncSTFDiffThld(rxFrame, 4, false);
+            EstSTF = WifiSyncSTF(rxFrame, 4);
             
             % Correct coarse CFO
             if ~EstSTF.syncSucceeded

@@ -12,17 +12,17 @@ GI = 16;
 GI2 = 32;
 SNR_dB = 5:5:50;
 initialDelay = 200;  % Initial zeros
-iter = 3000;
+iter = 2000;
 delayFactor = 4;
 
-CFO_norm = 0.01; % CFO normzalized by subcarrier spacing
+CFO_norm = 1.2; % CFO normzalized by subcarrier spacing
 trueCFO_Hz = CFO_norm*Fs/Nfft;
 trueCFO = 2*pi*trueCFO_Hz/Fs;  % rad/sample
 
 ACTIVE_TDL_CHANNEL = false;
 
 coarseCFO = zeros(length(SNR_dB), iter);
-fineCFO = zeros(length(SNR_dB), iter);
+totalCFO = zeros(length(SNR_dB), iter);
 syncFailedSTF = false(length(SNR_dB), iter);
 syncFailedLTF = false(length(SNR_dB), iter);
 BER = zeros(length(SNR_dB), iter);
@@ -115,7 +115,7 @@ for l = 1:length(SNR_dB)
         rxFrame = rxFrame + noise;
                       
         %% STF synchronization
-        EstSTF = WifiSyncSTFDiffThld(rxFrame, delayFactor, false);
+        EstSTF = WifiSyncSTF(rxFrame, delayFactor);
                    
         if ~EstSTF.syncSucceeded
             syncFailedSTF(l, i) = true;
@@ -147,8 +147,7 @@ for l = 1:length(SNR_dB)
         intCFO_norm = round((EstSTF.cfo - EstLTF.cfo)/(2*pi/Nfft));
         estCFO = EstLTF.cfo + intCFO_norm * (2*pi/Nfft);
 
-        %fineCFO(l, i) = estCFO*Fs/(2*pi);
-        fineCFO(l, i) = EstLTF.cfo*Fs/(2*pi);
+        totalCFO(l, i) = estCFO*Fs/(2*pi);        
         
         rxFrame = rxFrame .* exp(-1j*estCFO*n);
 
@@ -231,7 +230,7 @@ trueCFO_Hz_3D = reshape(trueCFO_Hz, [], 1, 1);
 
 subcarrierSpacing = Fs/Nfft;
 residualCoarse = (trueCFO_Hz_3D - coarseCFO) ./ subcarrierSpacing;
-residualTotal = (trueCFO_Hz_3D - fineCFO) ./ subcarrierSpacing;
+residualTotal = (trueCFO_Hz_3D - totalCFO) ./ subcarrierSpacing;
 
 % RMSE across Monte Carlo iterations
 residualCoarse(~ok) = NaN;

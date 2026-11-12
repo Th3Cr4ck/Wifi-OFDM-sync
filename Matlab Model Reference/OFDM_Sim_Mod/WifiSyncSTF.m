@@ -1,4 +1,4 @@
-function [EstVals, syncMetric, diffSyncM] = WifiSyncSTFDiffThld(RxSignal, delayFactor, plotMetric)
+function [EstVals, syncMetric, diffSyncM] = WifiSyncSTF(RxSignal, delayFactor)
 %% Parameters
 L = 16;
 PLATEAU_THRESHOLD = 0.30;
@@ -39,17 +39,6 @@ plateauMask = syncMetric > PLATEAU_THRESHOLD;
 
 diffMask = diffSyncM <= DIFF_THRESHOLD;
 
-if plotMetric
-    plot(syncMetric);
-    hold on; pdiffSyncM = plot(diffSyncM);
-    stem(plateauMask);
-    stem(diffMask);
-    datatip(pdiffSyncM, 'DataIndex', 364);
-    datatip(pdiffSyncM, 'DataIndex', 363);
-    drawnow;
-end
-
-
 windowLen = 2*L;
 longPlateauWindowMask = zeros(1, length(syncMetric));
 plateauCount = 0;
@@ -63,14 +52,7 @@ for i = 1:length(syncMetric)
 end
 
 candidatesMask = longPlateauWindowMask & diffMask;
-if plotMetric
-    figure(2); clf; hold on; grid on;
-    stem(plateauMask);
-    stem(longPlateauWindowMask, 'Marker','x', 'MarkerSize', 10);
-    stem(diffMask);
-    stem(candidatesMask, 'Marker', 'square', 'MarkerSize', 16, 'LineWidth', 1.1);
-    drawnow;
-end
+
 if ~any(candidatesMask)
     return;
 end

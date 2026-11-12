@@ -12,8 +12,8 @@ Nfft = 64;
 GI = 16;
 GI2 = 32;
 initialDelay = 200;  % Initial zeros
-SNR_dB = 5:5:80;
-it = 5000;
+SNR_dB = 5:5:50;
+it = 3000;
 delayFactor = 4;
 
 syncFailedSTF = false(length(SNR_dB), it);
@@ -106,9 +106,7 @@ for SNR = SNR_dB
         rxFrame = rxFrame + noise;
         
         %% Synchronization
-        % figure(1); clf; hold on; grid on;
-        % xline(trueLTFStart, '--', 'LTF Start');
-        EstSTF = WifiSyncSTFDiffThld(rxFrame, delayFactor, false);
+        EstSTF = WifiSyncSTF(rxFrame, delayFactor);
     
         if ~EstSTF.syncSucceeded
             syncFailedSTF(SNR == SNR_dB, i) = true;
@@ -123,25 +121,12 @@ for SNR = SNR_dB
             continue;
         end
 
+        % Correct CFO
         n = 0:length(rxFrame)-1;
         rxFrame = rxFrame .* exp(-1j*EstSTF.cfo*n);
-        % EstLTF = WifiSyncLTF(rxFrame(EstSTF.index:end));
-        % 
-        % if ~EstLTF.syncSucceeded
-        %     syncFailedLTF(SNR == SNR_dB, i) = true;
-        %     continue;
-        % end
-        % 
 
         truePayloadStart = trueLTFStart + length(preamLong);
-        %payloadStart = EstSTF.index + EstLTF.index - 1;
         payloadStart = EstSTF.index+160;
-       
-        % plot(abs(rxFrame));
-        % xline(truePayloadStart, '-', 'True Payload Start');
-        % xline(payloadStart, '--', 'Estimated');
-        % xline(truePayloadStart+GI-1, '-', 'CP End');
-        % xline(payloadStart+GI-1, '--', 'Estimated + CP');
 
    
         %% Channel estimation using LTF
