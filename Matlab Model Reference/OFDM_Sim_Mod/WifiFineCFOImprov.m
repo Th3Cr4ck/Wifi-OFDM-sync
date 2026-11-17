@@ -6,7 +6,7 @@ clc;
 Fs = 10e6;
 Fc = 2.4e9;
 Nfft = 64;
-Mary = 16;
+Mary = 64;
 GI = 16;
 SNR_dB = 5:5:50;
 iter = 1000;
@@ -19,9 +19,12 @@ trueCFO = 2*pi*trueCFO_Hz/Fs;  % rad/sample
 
 ACTIVE_TDL_CHANNEL = true;
 
-coarseCFO = zeros(length(CFO_norm_values),length(SNR_dB), iter);
-totalCFO = zeros(length(CFO_norm_values), length(SNR_dB), iter);
-validSynch = false(length(CFO_norm_values), length(SNR_dB), iter);
+fullSize = size(zeros(length(CFO_norm_values), length(SNR_dB), iter));
+coarseCFO = zeros(fullSize);
+totalCFO = zeros(fullSize);
+validSynch = false(fullSize);
+BERFullSync = zeros(fullSize);
+BERHalfSync = zeros(fullSize);
 
 %% Generate preamble
 preamShort = generatePreambleSTF();
@@ -55,8 +58,8 @@ for m = 1:length(CFO_norm_values)
             % 52 active subcarriers, excluding DC
             activeSubcarriers = [-26:-1 1:26];
             
-            transmittedBits = round(rand(52*log2(Mary), 1));
-            payloadSymbols = qammod(transmittedBits, Mary, ...
+            txBits = round(rand(52*log2(Mary), 1));
+            payloadSymbols = qammod(txBits, Mary, ...
                 'InputType', 'bit', 'UnitAveragePower', true).';
                
             X = zeros(1,Nfft);
@@ -109,32 +112,42 @@ for m = 1:length(CFO_norm_values)
             
             %% Run STF synchronization            
             EstSTF = WifiSyncSTF(rxFrame, 4);
-            
-            % Correct coarse CFO
+                        
             if ~EstSTF.syncSucceeded
                 continue;
             end
             
+            % Correct coarse CFO
             coarseCFO(m, l, i) = EstSTF.cfo*Fs/(2*pi);            
-            %rxFrameCoarseCorrected = rxFrame .* exp(-1j*EstSTF.cfo*n);            
+            rxCoarseCorrected = rxFrame .* exp(-1j*EstSTF.cfo*n);            
             
-            %% Run LTF synchronization                
-            EstLTF = WifiSyncLTF(transpose(rxFrame(EstSTF.index:end)));
+            %% Run LTF synchronization               
+            EstLTF = WifiSyncLTF(transpose(rxCoarseCorrected(EstSTF.index:end)));
 
-            % Correct fine CFO
             if ~EstLTF.syncSucceeded
                 continue;                             
             end
     
             validSynch(m, l, i) = true;
 
-            intCFO_norm = round((EstSTF.cfo - EstLTF.cfo)/(2*pi/Nfft));
-            estCFO = EstLTF.cfo + intCFO_norm * (2*pi/Nfft);
+            % intCFO_norm = round((EstSTF.cfo - EstLTF.cfo)/(2*pi/Nfft));
+            % estCFO = EstLTF.cfo + intCFO_norm * (2*pi/Nfft);
+            % totalCFO(m, l, i) = estCFO*Fs/(2*pi);
 
-            totalCFO(m, l, i) = estCFO*Fs/(2*pi);
-            %fineCFO(m,l,i) = EstLTF.cfo*Fs/(2*pi);
-            rxFrameFineCorrected = rxFrame .* exp(-1j*estCFO*n);
+            % Correct fine CFO
+            totalCFO(m,l,i) = (EstLTF.cfo + EstSTF.cfo) * Fs / (2*pi);
+            rxFineCorrected = rxCoarseCorrected .* exp(-1j*EstLTF.cfo*n);
     
+    
+            %% Equalization and Demodulation
+                           
+            BERHalfSync(m,l,i) = equalizeAndDemod(rxCoarseCorrected, ...
+                EstSTF.index, activeBins, payloadScale, txBits, Mary, ...
+                preamLong);
+
+            BERFullSync(m,l,i) = equalizeAndDemod(rxFineCorrected, ...
+                EstSTF.index, activeBins, payloadScale, txBits, Mary, ...
+                preamLong);
         end
     end
 end
@@ -158,7 +171,7 @@ rmseCoarseOnly = sqrt(mean(residualCoarse.^2, 3, 'omitnan'));
 rmseCoarseFine = sqrt(mean(residualTotal.^2, 3, 'omitnan'));
 
 % Improvement in RMSE
-improvement_dB = 20*log10( ...
+improvementCFO_dB = 20*log10( ...
     rmseCoarseOnly ./ max(rmseCoarseFine, eps));
 
 % Plot 1: Residual CFO RMSE vs SNR
@@ -181,7 +194,7 @@ title('Residual CFO Estimation Performance With Applied CFO \epsilon=1.2');
 % Plot 2: Improvement due to fine CFO estimation
 figure('Name', 'Fine CFO Improvement');
 
-imagesc(SNR_dB, CFO_norm_values, improvement_dB);
+imagesc(SNR_dB, CFO_norm_values, improvementCFO_dB);
 axis xy;
 colorbar;
 hold on;
@@ -199,7 +212,7 @@ figure('Name', 'RMSE Improvement');
 hold on;
 
 for m = 1:numCFO
-    plot(SNR_dB, improvement_dB(m,:), '-o', ...
+    plot(SNR_dB, improvementCFO_dB(m,:), '-o', ...
         'LineWidth', 1.5, 'MarkerSize', 5, ...
         'DisplayName', sprintf('CFO = %.1f', CFO_norm_values(m)));
 end
@@ -211,52 +224,135 @@ ylabel('RMSE Improvement (dB)');
 title('Benefit of Fine CFO Estimation');
 legend('Location', 'best');
 
+% Plot 4: BER vs SNR
+figure('Name', 'BER vs SNR');
 
-%% Display results
-fprintf('--- STF synchronization test ---\n');
-fprintf('Actual LTF start index (MATLAB): %d\n', initialDelay+1);
-fprintf('Detected index:                  %d\n', EstSTF.index);
-fprintf('Synchronization successful:     %d\n', EstSTF.syncSucceeded);
+BERHalfSync(~validSynch) = NaN;
+BERFullSync(~validSynch) = NaN;
 
-%% Plot received signal and detection index
-figure('Name', 'STO Estimation');
-plot(abs(rxFrame));
+meanBERHalf = mean(BERHalfSync, 3, 'omitnan');
+meanBERFull = mean(BERFullSync, 3, 'omitnan');
+
+hold on;
+semilogy(SNR_dB, meanBERHalf(CFO_norm_values==1.2,:), '-o', ...
+    'LineWidth', 1.4, 'MarkerSize', 5, ...
+    'DisplayName', 'Coarse Only');
+semilogy(SNR_dB, meanBERFull(CFO_norm_values==1.2,:), '-o', ...
+    'LineWidth', 1.4, 'MarkerSize', 5, ...
+    'DisplayName', 'Coarse + Fine');
+
+grid on;
+xlabel('SNR (dB)');
+ylabel('BER');
+title('BER With Applied CFO \epsilon=1.2');
+legend;
+
+% Plot 5: BER Gain
+figure;
+
+gainBER = 10*log10(meanBERHalf ./ meanBERFull);
+gainBER_plot = gainBER;
+
+% Ganancia muy alta cuando BER Coarse + Fine es cero
+gainBER_plot(isinf(gainBER_plot) & gainBER_plot > 0) = 50;
+
+% Sin mejora cuantificable cuando ambas BER son cero
+gainBER_plot(isnan(gainBER_plot)) = 0;
+
+imagesc(SNR_dB, CFO_norm_values, gainBER);
+axis xy;
+colorbar;
 hold on;
 
-xline(initialDelay+1, '--g', 'STF start');
+xlabel('SNR (dB)');
+ylabel('BER Gain');
+title('BER Improvement from Fine CFO Estimation (dB)');
 
-if EstSTF.syncSucceeded
-    xline(EstSTF.index, '--r', 'STF detected index');
-end
-
-xlabel('Sample index');
-ylabel('Magnitude');
-title('802.11a frame: Synchronization');
+set(gca, 'YTick', CFO_norm_values);
 grid on;
-legend('Received signal', 'STF start', 'STF Detected index');
+box on;
 
-%% Generate Preamble Functions
-function preamLong = generatePreambleLTF()
-    k = -26:26;
-    L = [1 1 -1 -1 1 1 -1 1 -1 1 1 1 1 1 1 -1 -1 1 1 -1 1 -1 1 1 1 1 ...
-         0 ...
-         1 -1 -1 1 1 -1 1 -1 1 -1 -1 -1 -1 -1 1 1 -1 -1 1 -1 1 -1 1 1 1 1];
-    
-    Lfft = zeros(1,64);
-    Lfft(mod(k,64)+1) = L;          % k negativo -> bins 64+k
-    
-    l64  = ifft(Lfft);
-    GI2 = 32;
-    preamLong = [l64(GI2+1:64) l64 l64];    % GI2 + T1 + T2 = 160 muestras
+% Plot 6
+figure;
+hold on;
+
+for k = 1:length(CFO_norm_values)
+
+    plot(SNR_dB, gainBER_plot(k,:), '-o', ...
+        'LineWidth', 1.4, ...
+        'MarkerSize', 5, ...
+        'DisplayName', ...
+        sprintf('\\epsilon = %.1f', CFO_norm_values(k)));
+
 end
 
-function preamShort = generatePreambleSTF()
-    k    = [-24 -20 -16 -12 -8 -4 4 8 12 16 20 24];
-    vals = (1+1j) * [1 -1 1 -1 -1 1 -1 -1 1 1 1 1];
-    
-    S = zeros(1,64);
-    S(mod(k,64)+1) = sqrt(13/6) * vals;   % mapeo a bins FFT (k negativo -> 64+k)
-    
-    s64   = ifft(S);                       % 64 muestras, periodo de 16
-    preamShort = repmat(s64(1:16), 1, 10);      % 160 muestras = 8 µs
+grid on;
+xlabel('SNR (dB)');
+ylabel('BER Gain');
+title('BER Improvement vs SNR');
+legend('Location', 'best');
+
+%% Display results
+% fprintf('--- STF synchronization test ---\n');
+% fprintf('Actual LTF start index (MATLAB): %d\n', initialDelay+1);
+% fprintf('Detected index:                  %d\n', EstSTF.index);
+% fprintf('Synchronization successful:     %d\n', EstSTF.syncSucceeded);
+
+%% Plot received signal and detection index
+% figure('Name', 'STO Estimation');
+% plot(abs(rxFrame));
+% hold on;
+% 
+% xline(initialDelay+1, '--g', 'STF start');
+% 
+% if EstSTF.syncSucceeded
+%     xline(EstSTF.index, '--r', 'STF detected index');
+% end
+% 
+% xlabel('Sample index');
+% ylabel('Magnitude');
+% title('802.11a frame: Synchronization');
+% grid on;
+% legend('Received signal', 'STF start', 'STF Detected index');
+% 
+
+function BER = equalizeAndDemod(rxFrame, ltfStart, activeBins, ...
+    payloadScale, txBits, Mary, preamLong)
+GI = 16;
+GI2 = 32;
+Nfft = 64;
+payloadStart = ltfStart + 160;
+%% Channel estimation using LTF    
+
+% Extract the two LTF symbols
+ltf1 = rxFrame(ltfStart+GI2 : ltfStart+GI2+Nfft-1);
+ltf2 = rxFrame(ltfStart+GI2+Nfft : ltfStart+GI2+2*Nfft-1);
+
+Yltf1 = fft(ltf1, Nfft);
+Yltf2 = fft(ltf2, Nfft);
+
+% Known transmitted LTF in frequency domain
+Xltf = fft(preamLong(GI2+1:GI2+Nfft), Nfft);
+
+% Estimate channel and average both LTF symbols
+H_hat = 0.5 * (Yltf1 ./ Xltf + Yltf2 ./ Xltf);
+
+%% Equalization                       
+% Remove CP
+rxPayload = rxFrame(payloadStart+GI : payloadStart+GI+Nfft-1);
+
+Y = fft(rxPayload, Nfft);
+
+% Zero-forcing equalization
+equalizedSymbols = Y(activeBins) ./ H_hat(activeBins);     
+equalizedSymbols = equalizedSymbols / payloadScale;
+
+% Constellation
+%scatter(real(equalizedSymbols), imag(equalizedSymbols));
+
+%% BER calculation
+detectedBits = qamdemod(equalizedSymbols(:), Mary, ...
+    'OutputType', 'bit', 'UnitAveragePower', true);
+
+BER = mean(detectedBits ~= txBits);
 end
